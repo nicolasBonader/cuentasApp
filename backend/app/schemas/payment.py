@@ -17,6 +17,7 @@ class PaymentCreate(PaymentBase):
 
 class PaymentResponse(PaymentBase):
     id: int
+    bill_id: Optional[int] = None
     paid_at: datetime
     status: str
 

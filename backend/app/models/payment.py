@@ -11,6 +11,7 @@ class Payment(Base):
     id = Column(Integer, primary_key=True, index=True)
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
     payment_method_id = Column(Integer, ForeignKey("payment_methods.id"), nullable=True)
+    bill_id = Column(Integer, ForeignKey("bills.id"), nullable=True)
     amount = Column(Numeric(10, 2), nullable=False)
     paid_at = Column(DateTime(timezone=True), server_default=func.now())
     status = Column(String, default="completed")  # pending, completed, failed
@@ -18,3 +19,4 @@ class Payment(Base):
 
     account = relationship("Account", back_populates="payments")
     payment_method = relationship("PaymentMethod", back_populates="payments")
+    bill = relationship("Bill", back_populates="payments")

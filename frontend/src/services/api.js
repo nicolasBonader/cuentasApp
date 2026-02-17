@@ -92,3 +92,48 @@ export async function deletePayment(id) {
   if (!response.ok) throw new Error('Error al eliminar pago');
   return response.json();
 }
+
+// Bills
+export async function getBills(accountId = null, status = null) {
+  const params = new URLSearchParams();
+  if (accountId) params.set('account_id', accountId);
+  if (status) params.set('status', status);
+  const qs = params.toString();
+  const url = qs ? `${API_BASE}/bills/?${qs}` : `${API_BASE}/bills/`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Error al obtener facturas');
+  return response.json();
+}
+
+export async function syncAccount(id) {
+  const response = await fetch(`${API_BASE}/accounts/${id}/sync`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error('Error al sincronizar cuenta');
+  return response.json();
+}
+
+export async function payBill(id, paymentMethodId = null) {
+  const params = paymentMethodId ? `?payment_method_id=${paymentMethodId}` : '';
+  const response = await fetch(`${API_BASE}/bills/${id}/pay${params}`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error('Error al pagar factura');
+  return response.json();
+}
+
+export async function getTask(id) {
+  const response = await fetch(`${API_BASE}/tasks/${id}`);
+  if (!response.ok) throw new Error('Error al obtener tarea');
+  return response.json();
+}
+
+export async function pollTask(taskId, intervalMs = 2000) {
+  while (true) {
+    const task = await getTask(taskId);
+    if (task.status === 'completed' || task.status === 'failed') {
+      return task;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+}

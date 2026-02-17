@@ -8,7 +8,7 @@ const FREQUENCY_LABELS = {
   annual: 'Anual',
 };
 
-export default function AccountList({ accounts, onEdit, onDelete }) {
+export default function AccountList({ accounts, onEdit, onDelete, onSync, syncingAccounts = {} }) {
   const [copiedId, setCopiedId] = useState(null);
 
   const handleGoToPay = async (account) => {
@@ -74,6 +74,16 @@ export default function AccountList({ accounts, onEdit, onDelete }) {
               )}
             </div>
             <div className="actions">
+              {account.driver_name && onSync && (
+                <button
+                  className="btn"
+                  style={{ background: '#8e44ad', color: 'white' }}
+                  disabled={syncingAccounts[account.id]}
+                  onClick={() => onSync(account.id)}
+                >
+                  {syncingAccounts[account.id] ? 'Sincronizando...' : 'Sincronizar'}
+                </button>
+              )}
               {canPay && (
                 <button
                   className="btn"

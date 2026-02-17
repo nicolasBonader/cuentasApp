@@ -2,9 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+For detailed architecture, data model, API endpoints, and driver system documentation, see **[docs/architecture.md](docs/architecture.md)**.
+
 ## What is this project?
 
-Cuentas App — a personal web app to manage and pay utility bills (electricity, water, HOA fees, etc.) for a single user in Mendoza, Argentina. No auth system. UI is in Spanish, backend code in English.
+Cuentas App — a personal web app to manage and pay utility bills (electricity, water, gas, HOA fees, etc.). No auth system. UI is in Spanish, backend code in English.
 
 ## Commands
 
@@ -23,6 +25,14 @@ npm run dev                                # Run dev server on :5173
 npm run build                              # Production build
 ```
 
+### Database migrations (Alembic)
+```bash
+cd backend
+uv run alembic revision --autogenerate -m "description"   # Generate migration
+uv run alembic upgrade head                                # Apply migrations
+uv run alembic current                                     # Check current revision
+```
+
 ### Generate encryption key (one-time setup)
 ```python
 from cryptography.fernet import Fernet
@@ -34,17 +44,19 @@ Put the result in `backend/.env` as `CARD_ENCRYPTION_KEY`.
 
 **Monorepo with two independent apps:**
 
-- `backend/` — FastAPI, SQLAlchemy ORM, SQLite (`cuentas.db` created at project root of backend), Pydantic v2 schemas. Managed with `uv` (see `pyproject.toml`). Config via `pydantic-settings` loading from `backend/.env`.
-- `frontend/` — React 18 + Vite, plain JSX (no TypeScript), inline styles (no CSS framework). Tab-based navigation (Cuentas / Tarjetas / Pagos) managed via state in `App.jsx`, no client-side router.
+- `backend/` — FastAPI, SQLAlchemy ORM, SQLite, Pydantic v2, Alembic migrations. Managed with `uv`.
+- `frontend/` — React 18 + Vite, plain JSX (no TypeScript), inline styles. Tab-based navigation managed via state in `App.jsx`.
 
-**Backend structure:** `app/main.py` is the FastAPI entrypoint. Tables are auto-created via `Base.metadata.create_all()` on startup. Three resource modules each follow the same pattern:
+**Backend structure:** `app/main.py` is the FastAPI entrypoint. Five resource modules each follow the same pattern:
 - `models/<resource>.py` — SQLAlchemy model
 - `schemas/<resource>.py` — Pydantic schemas (Create, Update, Response)
 - `routers/<resource>.py` — CRUD endpoints
 
-API prefix convention: `/accounts`, `/payment-methods`, `/payments`.
+Resources: accounts, bills, payments, payment_methods, tasks.
 
-**Frontend structure:** Each tab maps to a page component in `src/pages/` which owns state and calls `src/services/api.js` (single file with all fetch wrappers hitting `http://localhost:8000` directly). Forms and lists are in `src/components/`.
+API prefix convention: `/accounts`, `/bills`, `/payment-methods`, `/payments`, `/tasks`.
+
+**Driver system:** Standalone Python scripts in `backend/drivers/` that automate service interactions via Playwright. Invoked by the backend as subprocesses. Input via env vars, output as JSON to stdout. Full spec: `backend/docs/driver_spec.md`.
 
 **Card encryption:** Payment method card data (number, expiry, CVV) is encrypted with Fernet (AES-128-CBC) via `app/services/encryption.py`. Only `last_four_digits` is stored in plaintext.
 
@@ -63,5 +75,9 @@ All code (variable names, function names, comments, commit messages) must be in 
 - Pydantic schemas use `model_dump()` and `from_attributes = True` (Pydantic v2)
 - API error messages are in Spanish ("Cuenta no encontrada", etc.)
 - Frontend uses `es-AR` locale for currency (ARS) and date formatting
-- `Account.identifiers` is a JSON column for arbitrary key-value pairs (e.g. `numero_cliente`, `nic`)
-- Vite config has an `/api` proxy to `:8000` but the frontend currently calls the backend directly
+- `Account.identifiers` is a JSON column for arbitrary key-value pairs (e.g. `numero_cuenta`, `nic`)
+- `Account.driver_name` maps to `backend/drivers/{name}.py`, auto-generated from account name on create
+- `Bill.amount_cents` stores amounts in cents (integer) to avoid floating point issues
+- Schema changes require Alembic migrations (`uv run alembic revision --autogenerate`)
+- Alembic uses `render_as_batch=True` for SQLite compatibility
+- Async operations (sync/pay) use background threads with Task-based polling

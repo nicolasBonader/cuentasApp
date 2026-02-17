@@ -7,6 +7,7 @@ class AccountBase(BaseModel):
     name: str
     frequency: str = "monthly"
     website_url: Optional[str] = None
+    driver_name: Optional[str] = None
     identifiers: dict = {}
 
 
@@ -18,6 +19,7 @@ class AccountUpdate(BaseModel):
     name: Optional[str] = None
     frequency: Optional[str] = None
     website_url: Optional[str] = None
+    driver_name: Optional[str] = None
     identifiers: Optional[dict] = None
 
 

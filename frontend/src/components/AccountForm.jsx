@@ -13,8 +13,10 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
     name: '',
     frequency: 'monthly',
     website_url: '',
+    driver_name: '',
     identifiers: {},
   });
+  const [driverNameManual, setDriverNameManual] = useState(false);
   const [identifierKey, setIdentifierKey] = useState('');
   const [identifierValue, setIdentifierValue] = useState('');
 
@@ -24,8 +26,10 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
         name: account.name || '',
         frequency: account.frequency || 'monthly',
         website_url: account.website_url || '',
+        driver_name: account.driver_name || '',
         identifiers: account.identifiers || {},
       });
+      if (account.driver_name) setDriverNameManual(true);
     }
   }, [account]);
 
@@ -34,9 +38,19 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
     onSubmit(formData);
   };
 
+  const generateDriverName = (name) => {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'name' && !driverNameManual) {
+        updated.driver_name = generateDriverName(value);
+      }
+      return updated;
+    });
   };
 
   const addIdentifier = () => {
@@ -97,6 +111,23 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
           onChange={handleChange}
           placeholder="https://..."
         />
+      </div>
+
+      <div className="form-group">
+        <label>Nombre del Driver</label>
+        <input
+          type="text"
+          name="driver_name"
+          value={formData.driver_name}
+          onChange={(e) => {
+            setDriverNameManual(true);
+            setFormData((prev) => ({ ...prev, driver_name: e.target.value }));
+          }}
+          placeholder="Se genera automáticamente del nombre"
+        />
+        <small style={{ color: '#888' }}>
+          Debe coincidir con el archivo en drivers/ (ej: ecogas → drivers/ecogas.py)
+        </small>
       </div>
 
       <div className="form-group">

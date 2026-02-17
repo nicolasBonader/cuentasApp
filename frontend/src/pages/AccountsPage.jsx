@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import AccountList from '../components/AccountList';
 import AccountForm from '../components/AccountForm';
-import { getAccounts, createAccount, updateAccount, deleteAccount } from '../services/api';
+import { getAccounts, createAccount, updateAccount, deleteAccount, syncAccount, pollTask } from '../services/api';
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState([]);
@@ -9,6 +9,7 @@ export default function AccountsPage() {
   const [editingAccount, setEditingAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [syncingAccounts, setSyncingAccounts] = useState({});
 
   useEffect(() => {
     loadAccounts();
@@ -64,6 +65,22 @@ export default function AccountsPage() {
     setShowForm(true);
   };
 
+  const handleSync = async (accountId) => {
+    try {
+      setSyncingAccounts((prev) => ({ ...prev, [accountId]: true }));
+      setError(null);
+      const { task_id } = await syncAccount(accountId);
+      const task = await pollTask(task_id);
+      if (task.status === 'failed') {
+        setError(task.error || 'Error al sincronizar');
+      }
+    } catch (err) {
+      setError('Error al sincronizar cuenta');
+    } finally {
+      setSyncingAccounts((prev) => ({ ...prev, [accountId]: false }));
+    }
+  };
+
   const handleCancel = () => {
     setShowForm(false);
     setEditingAccount(null);
@@ -97,7 +114,13 @@ export default function AccountsPage() {
           onCancel={handleCancel}
         />
       ) : (
-        <AccountList accounts={accounts} onEdit={handleEdit} onDelete={handleDelete} />
+        <AccountList
+          accounts={accounts}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onSync={handleSync}
+          syncingAccounts={syncingAccounts}
+        />
       )}
     </div>
   );

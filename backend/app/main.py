@@ -1,11 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import engine, Base
-from .routers import accounts, payment_methods, payments
-
-# Create database tables
-Base.metadata.create_all(bind=engine)
+from .routers import accounts, bills, payment_methods, payments, tasks
 
 app = FastAPI(
     title="Cuentas App API",
@@ -24,8 +20,10 @@ app.add_middleware(
 
 # Include routers
 app.include_router(accounts.router)
+app.include_router(bills.router)
 app.include_router(payment_methods.router)
 app.include_router(payments.router)
+app.include_router(tasks.router)
 
 
 @app.get("/")

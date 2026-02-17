@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import AccountsPage from './pages/AccountsPage';
+import BillsPage from './pages/BillsPage';
 import PaymentMethodsPage from './pages/PaymentMethodsPage';
 import PaymentsPage from './pages/PaymentsPage';
 
 const TABS = [
   { id: 'accounts', label: 'Cuentas' },
   { id: 'cards', label: 'Tarjetas' },
+  { id: 'bills', label: 'Facturas' },
   { id: 'payments', label: 'Pagos' },
 ];
 
@@ -41,6 +43,7 @@ function App() {
 
       {activeTab === 'accounts' && <AccountsPage />}
       {activeTab === 'cards' && <PaymentMethodsPage />}
+      {activeTab === 'bills' && <BillsPage />}
       {activeTab === 'payments' && <PaymentsPage />}
     </div>
   );
